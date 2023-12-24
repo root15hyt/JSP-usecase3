@@ -8,8 +8,34 @@ import { render } from "./view/html-util.js";
 export class App {
     constructor() {
         // 1. TodoListの初期化
-        this.todoListModel = new TodoListModel();
+        this.todoListModel = new TodoListModel([]);
+        this.todoListView = new TodoListView();
     }
+
+    /**
+     * Todoを追加するときに呼ばれるリスナー関数
+     * @param {string} title
+     */
+    handleAdd(title) {
+        this.todoListModel.addTodo(new TodoItemModel({ title, completed:false }));
+    }
+
+    /**
+     * Todoの状態を更新したときに呼ばれるリスナー関数
+     * @param {{ id:number, completed:boolean }}
+     */
+    handleUpdate({ id, completed }) {
+        this.todoListModel.updateTodo({ id, completed });
+    }
+
+    /**
+     * Todoを削除したときの呼ばれるリスナー関数
+     * @param {{ id:number }}
+     */
+    handleDelete({ id }) {
+        this.todoListModel.deleteTodo({ id });
+    }
+    
     mount() {
         // id="js-form", "js-form-input", "js-todo-list", "js-todo-count"の要素を取得
         const formElement = document.querySelector("#js-form");
@@ -17,26 +43,18 @@ export class App {
         const containerElement = document.querySelector("#js-todo-list");
         const todoItemCountElement = document.querySelector("#js-todo-count");
         // 2. TodoListModelの状態が更新されたら表示を更新する
-        /**
-         * TodoListElementの実質的な中身
-         * <ul>
-         *  <li>Todoアイテム１のタイトル</li>
-         *  <li>Todoアイテム２のタイトル</li>
-         * </ul>
-         */
         this.todoListModel.onChange(() => {
             // それぞれのTodoItem要素をtodoListElement以下へ追加する
             const todoItems = this.todoListModel.getTodoItems();
             // todoItemsに対応するTodoListViewを作成する
-            const todoListView = new TodoListView();
-            const todoListElement = todoListView.createElement(todoItems, {
+            const todoListElement = this.todoListView.createElement(todoItems, {
                 // Todoアイテムが削除イベントを発生したときに呼ばれるリスナー関数
                 onDeleteTodo: ({ id }) => {
-                    this.todoListModel.deleteTodo({ id });
+                    this.handleDelete({ id });
                 },
                 // Todoアイテムが更新イベントを発生したときに呼ばれるリスナー関数
                 onUpdateTodo: ({ id, completed }) => {
-                    this.todoListModel.updateTodo({ id, completed });
+                    this.handleUpdate({ id, completed });
                 }
             });
             // containerElementの中身をtodoListElementで上書きする
@@ -50,10 +68,7 @@ export class App {
             // subimitイベントの本来の動作（ページのリロード）を止める。
             event.preventDefault();
             // 新しいTodoItemをTodoListへ追加する
-            this.todoListModel.addTodo(new TodoItemModel({
-                title: inputElement.value,
-                completed: false
-            }));
+            this.handleAdd(inputElement.value);
             // 入力欄を空文字列にしてリセットする。
             inputElement.value = "";
         });
