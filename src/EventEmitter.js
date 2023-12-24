@@ -16,7 +16,7 @@ export class EventEmitter {
      */
     addEventListener(type, listener) {
         // 指定したイベントに対応するSetを作成して、リスナー関数を登録する
-        if (this._listeners.has(type)) {
+        if (!this._listeners.has(type)) {
             this._listeners.set(type, new Set());
         }
         const listenerSet = this._listeners.get(type);
